@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===================================================================
     // KONFIGURASI & STATE APLIKASI
     // ===================================================================
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbrCCJt4Ib23cdDnHlbr7_7QBZ0F9lhyyyWoyuavFnkC_RnLFK5Uhdwwr2gqaQC5qmNQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziLQigyl54K-Ofw4fG3A6ckfS6jtVpHu0qsqeVlSxlEbspsFSD16pOy4f3-N6j8EF-NQ/exec';
     
     const state = {
         currentUser: null,
@@ -664,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fungsi untuk fetch data dari Google Apps Script
     async function apiCall(action, payload, method = 'POST') {
-        if (SCRIPT_URL.includes('PASTE_URL')) {
+        if (!SCRIPT_URL || SCRIPT_URL.includes('PASTE_URL')) {
             showToast('Error: URL Google Apps Script belum diatur!', true);
             console.error('Harap atur SCRIPT_URL di dalam kode JavaScript.');
             return;
@@ -699,7 +699,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (result) {
             state.allUsers = result.users || [];
             state.allQuestions = result.questions || [];
-            // state.allSettings tidak lagi digunakan
         }
     }
 
@@ -809,6 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
     retakeQuizBtn.addEventListener('click', startQuiz);
 
     function startQuiz() {
+        if (!state.allQuestions || state.allQuestions.length === 0) {
+            showToast("Bank soal masih kosong. Harap hubungi admin.", true);
+            return;
+        }
         clearSavedQuizState();
         state.currentQuizQuestions = shuffleArray([...state.allQuestions]).slice(0, 50);
         state.currentQuestionIndex = 0;
@@ -950,7 +953,9 @@ document.addEventListener('DOMContentLoaded', () => {
         stopQuizTimer();
         let correct = 0;
         state.currentQuizQuestions.forEach(q => {
-            if (state.userAnswers[q.id] === q.jawaban_benar) {
+            const userAnswer = state.userAnswers[q.id] ? String(state.userAnswers[q.id]).trim().toLowerCase() : null;
+            const correctAnswer = q.jawaban_benar ? String(q.jawaban_benar).trim().toLowerCase() : null;
+            if (userAnswer && correctAnswer && userAnswer === correctAnswer) {
                 correct++;
             }
         });
@@ -994,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reviewContainer.innerHTML = '';
         state.currentQuizQuestions.forEach((q, index) => {
             const userAnswer = state.userAnswers[q.id];
-            const isCorrect = userAnswer === q.jawaban_benar;
+            const isCorrect = userAnswer && q.jawaban_benar && String(userAnswer).trim().toLowerCase() === String(q.jawaban_benar).trim().toLowerCase();
             const cardBg = isCorrect ? 'bg-green-50' : 'bg-red-50';
             const borderColor = isCorrect ? 'border-green-300' : 'border-red-300';
 
@@ -1005,10 +1010,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ['a', 'b', 'c', 'd', 'e'].forEach(opt => {
                 if (q[`opsi_${opt}`]) {
                     let optionClass = '';
-                    if (opt === q.jawaban_benar) {
+                    if (opt.toLowerCase() === String(q.jawaban_benar).trim().toLowerCase()) {
                         optionClass = 'text-green-700 font-bold';
                     }
-                    if (opt === userAnswer && !isCorrect) {
+                    if (userAnswer && opt.toLowerCase() === userAnswer.toLowerCase() && !isCorrect) {
                         optionClass = 'text-red-700 line-through';
                     }
                     reviewHTML += `<p class="${optionClass}">${opt.toUpperCase()}. ${q[`opsi_${opt}`]}</p>`;
@@ -1016,7 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             reviewHTML += `</div>
-                <p class="mt-2 text-xs">Jawaban Anda: <span class="font-bold">${userAnswer ? userAnswer.toUpperCase() : 'Tidak dijawab'}</span> | Kunci: <span class="font-bold">${q.jawaban_benar.toUpperCase()}</span></p>
+                <p class="mt-2 text-xs">Jawaban Anda: <span class="font-bold">${userAnswer ? userAnswer.toUpperCase() : 'Tidak dijawab'}</span> | Kunci: <span class="font-bold">${String(q.jawaban_benar).toUpperCase()}</span></p>
             </div>`;
             reviewContainer.innerHTML += reviewHTML;
         });

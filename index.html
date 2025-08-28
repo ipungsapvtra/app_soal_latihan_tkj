@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Soal Latihan TKJ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        #questionNav::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+        #questionNav::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Utama -->
+    <div id="app" class="container mx-auto p-4 max-w-7xl">
+        
+        <!-- Header Aplikasi -->
+        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <img id="appLogo" src="logo.png" alt="Logo Sekolah" class="h-16 w-16 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/100x100/007BFF/FFFFFF?text=Logo';">
+                <div>
+                    <h1 id="appName" class="text-xl md:text-3xl font-bold text-gray-800">Aplikasi Soal Latihan TKJ</h1>
+                    <p class="text-sm md:text-md text-gray-600">SMKN 3 Kab. Tangerang</p>
+                </div>
+            </div>
+            <div id="userInfo" class="text-right">
+                <!-- Info pengguna akan muncul di sini -->
+            </div>
+        </header>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+            <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: LOGIN -->
+        <!-- =================================================================== -->
+        <div id="loginView" class="view active">
+            <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg mt-10">
+                <h2 class="text-2xl font-bold text-center mb-6">Login Pengguna</h2>
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
+                        <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300 font-semibold">Login</button>
+                </form>
+                <p id="loginError" class="text-red-500 text-center mt-4"></p>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: DASHBOARD SISWA -->
+        <!-- =================================================================== -->
+        <div id="studentDashboardView" class="view">
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <h2 class="text-3xl font-bold mb-4">Selamat Datang, <span id="studentName"></span>!</h2>
+                <p class="text-gray-600 mb-8">Anda akan mengerjakan 50 soal pilihan ganda secara acak. Klik tombol di bawah untuk memulai.</p>
+                <button id="startQuizBtn" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition duration-300 text-lg font-semibold">Mulai Kerjakan Soal</button>
+            </div>
+        </div>
+        
+        <!-- =================================================================== -->
+        <!-- VIEW: KUIS -->
+        <!-- =================================================================== -->
+        <div id="quizView" class="view">
+            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
+                <!-- Top Control Bar -->
+                <div class="flex justify-between items-center mb-4 border-b pb-4 flex-wrap gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold">Sisa Waktu</h3>
+                        <div id="timer" class="text-2xl font-bold text-red-600">60:00</div>
+                    </div>
+                    <button id="toggleNavBtn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300 transition">
+                        Tampilkan Daftar Soal
+                    </button>
+                </div>
+
+                <!-- Collapsible Question Navigation -->
+                <div id="questionNavContainer" class="hidden mb-4 p-4 bg-slate-50 rounded-lg border">
+                     <div id="questionNav" class="flex flex-wrap gap-2">
+                        <!-- Navigation buttons will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Main Question Area -->
+                <div class="flex-grow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Soal No. <span id="questionNumber"></span> dari 50</h2>
+                        <div class="text-lg font-semibold bg-blue-100 text-blue-800 px-4 py-1 rounded-full">Topik: <span id="questionTopic"></span></div>
+                    </div>
+                    <div id="questionContainer" class="mb-6">
+                        <p id="questionText" class="text-lg mb-4"></p>
+                        <div id="optionsContainer" class="space-y-3">
+                            <!-- Opsi jawaban akan dimuat di sini -->
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-6 pt-4 border-t">
+                    <button id="prevQuestionBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Sebelumnya</button>
+                    <div class="space-x-4">
+                        <button id="nextQuestionBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Selanjutnya</button>
+                        <button id="finishQuizBtn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition hidden">Selesaikan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: HASIL KUIS -->
+        <!-- =================================================================== -->
+        <div id="resultView" class="view">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-6">Hasil Pengerjaan Soal</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mb-8">
+                    <div class="bg-green-100 p-4 rounded-lg">
+                        <p class="text-lg text-green-800">Benar</p>
+                        <p id="correctAnswers" class="text-4xl font-bold text-green-600"></p>
+                    </div>
+                    <div class="bg-red-100 p-4 rounded-lg">
+                        <p class="text-lg text-red-800">Salah</p>
+                        <p id="wrongAnswers" class="text-4xl font-bold text-red-600"></p>
+                    </div>
+                    <div class="bg-blue-100 p-4 rounded-lg">
+                        <p class="text-lg text-blue-800">Nilai Akhir</p>
+                        <p id="finalScore" class="text-4xl font-bold text-blue-600"></p>
+                    </div>
+                </div>
+                <div class="text-center mb-8">
+                    <button id="reviewAnswersBtn" class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition">Lihat Pembahasan</button>
+                    <button id="retakeQuizBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Kerjakan Lagi</button>
+                </div>
+                <div id="reviewContainer" class="hidden mt-6 space-y-4">
+                    <!-- Pembahasan jawaban akan muncul di sini -->
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: DASHBOARD ADMIN -->
+        <!-- =================================================================== -->
+        <div id="adminDashboardView" class="view">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button data-target="manageQuestions" class="admin-menu-btn bg-white p-6 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-transform duration-300 text-center">
+                    <h3 class="text-2xl font-bold text-blue-600 mb-2">Kelola Soal</h3>
+                    <p class="text-gray-600">Tambah, Edit, atau Hapus Soal</p>
+                </button>
+                <button data-target="manageUsers" class="admin-menu-btn bg-white p-6 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-transform duration-300 text-center">
+                    <h3 class="text-2xl font-bold text-green-600 mb-2">Kelola Pengguna</h3>
+                    <p class="text-gray-600">Tambah Siswa Baru</p>
+                </button>
+            </div>
+            
+            <!-- Sub-view Admin -->
+            <div id="adminSubViewContainer" class="mt-8">
+                <!-- KELOLA SOAL -->
+                <div id="manageQuestions" class="admin-sub-view hidden">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">Daftar Soal</h2>
+                            <button id="addQuestionBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Tambah Soal Baru</button>
+                        </div>
+                        <input type="text" id="searchQuestionInput" class="w-full p-2 border rounded-lg mb-4" placeholder="Cari soal berdasarkan pertanyaan atau topik...">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead class="bg-gray-200">
+                                    <tr>
+                                        <th class="py-2 px-4 text-left">Pertanyaan</th>
+                                        <th class="py-2 px-4 text-left">Topik</th>
+                                        <th class="py-2 px-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="questionsTableBody">
+                                    <!-- Data soal akan dimuat di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- KELOLA PENGGUNA -->
+                <div id="manageUsers" class="admin-sub-view hidden">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold">Daftar Pengguna</h2>
+                            <button id="addUserBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Tambah Siswa</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead class="bg-gray-200">
+                                    <tr>
+                                        <th class="py-2 px-4 text-left">Nama Lengkap</th>
+                                        <th class="py-2 px-4 text-left">Username</th>
+                                        <th class="py-2 px-4 text-left">Role</th>
+                                        <th class="py-2 px-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Data pengguna akan dimuat di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Soal -->
+    <div id="questionModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">Tambah Soal Baru</h2>
+            <form id="questionForm">
+                <input type="hidden" id="questionId">
+                <div class="mb-4">
+                    <label for="pertanyaan" class="block font-medium">Pertanyaan</label>
+                    <textarea id="pertanyaan" rows="3" class="w-full mt-1 p-2 border rounded-lg" required></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="opsi_a" class="block font-medium">Opsi A</label>
+                        <input type="text" id="opsi_a" class="w-full mt-1 p-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="opsi_b" class="block font-medium">Opsi B</label>
+                        <input type="text" id="opsi_b" class="w-full mt-1 p-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="opsi_c" class="block font-medium">Opsi C</label>
+                        <input type="text" id="opsi_c" class="w-full mt-1 p-2 border rounded-lg" required>
+                    </div>
+                    <div>
+                        <label for="opsi_d" class="block font-medium">Opsi D</label>
+                        <input type="text" id="opsi_d" class="w-full mt-1 p-2 border rounded-lg" required>
+                    </div>
+                     <div>
+                        <label for="opsi_e" class="block font-medium">Opsi E</label>
+                        <input type="text" id="opsi_e" class="w-full mt-1 p-2 border rounded-lg" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="jawaban_benar" class="block font-medium">Jawaban Benar</label>
+                        <select id="jawaban_benar" class="w-full mt-1 p-2 border rounded-lg" required>
+                            <option value="a">Opsi A</option>
+                            <option value="b">Opsi B</option>
+                            <option value="c">Opsi C</option>
+                            <option value="d">Opsi D</option>
+                            <option value="e">Opsi E</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="topik" class="block font-medium">Topik</label>
+                        <input type="text" id="topik" class="w-full mt-1 p-2 border rounded-lg" required list="topic-list">
+                        <datalist id="topic-list">
+                            <!-- Opsi topik akan diisi dinamis -->
+                        </datalist>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelQuestionForm" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Batal</button>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Form User -->
+    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-40 hidden">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6">Tambah Siswa Baru</h2>
+            <form id="userForm">
+                <div class="mb-4">
+                    <label for="nama_lengkap_user" class="block font-medium">Nama Lengkap</label>
+                    <input type="text" id="nama_lengkap_user" class="w-full mt-1 p-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="username_user" class="block font-medium">Username</label>
+                    <input type="text" id="username_user" class="w-full mt-1 p-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password_user" class="block font-medium">Password</label>
+                    <input type="password" id="password_user" class="w-full mt-1 p-2 border rounded-lg" required>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancelUserForm" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Batal</button>
+                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm text-center">
+            <h3 id="confirmTitle" class="text-lg font-bold mb-4">Konfirmasi</h3>
+            <p id="confirmMessage" class="text-gray-600 mb-6">Apakah Anda yakin?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmCancelBtn" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Batal</button>
+                <button id="confirmOkBtn" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Yakin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Toast -->
+    <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-[120%] transition-transform duration-500">
+        <p id="toastMessage"></p>
+    </div>
+
+<!--
+====================================================================================================
+KODE GOOGLE APPS SCRIPT (Salin semua kode di bawah ini ke editor Apps Script di Google Sheet Anda)
+====================================================================================================
+
+const SHEET_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"; // Ganti dengan ID Google Sheet Anda
+const sheet = SpreadsheetApp.openById(SHEET_ID);
+const usersSheet = sheet.getSheetByName("Users");
+const questionsSheet = sheet.getSheetByName("Soal");
+const scoresSheet = sheet.getSheetByName("Scores"); 
+
+// Sheet "Settings" tidak lagi digunakan untuk logo
+// const settingsSheet = sheet.getSheetByName("Settings");
+
+function doGet(e) {
+  const action = e.parameter.action;
+
+  if (action == "getData") {
+    const users = sheetToJSON(usersSheet);
+    const questions = sheetToJSON(questionsSheet);
+    // Data settings tidak perlu diambil lagi
+    // const settings = sheetToJSON(settingsSheet);
+    
+    // Sembunyikan password dari data user yang dikirim ke client
+    const safeUsers = users.map(({ password, ...rest }) => rest);
+
+    return ContentService.createTextOutput(JSON.stringify({ users: safeUsers, questions })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("Request POST tidak valid atau data kosong.");
+    }
+
+    const data = JSON.parse(e.postData.contents);
+    
+    if (!data || !data.action) {
+      throw new Error("Aksi (action) tidak ditemukan dalam data yang dikirim.");
+    }
+
+    const action = data.action;
+    let result = {};
+
+    switch (action) {
+      case "login":
+        result = handleLogin(data.payload);
+        break;
+      case "addQuestion":
+        result = addQuestion(data.payload);
+        break;
+      case "updateQuestion":
+        result = updateQuestion(data.payload);
+        break;
+      case "deleteQuestion":
+        result = deleteRowByValue(questionsSheet, 'id', data.payload.id);
+        break;
+      case "addUser":
+        result = addUser(data.payload);
+        break;
+      case "deleteUser":
+        result = deleteRowByValue(usersSheet, 'username', data.payload.username);
+        break;
+      // Kasus "updateSetting" dihapus karena tidak lagi digunakan
+      case "submitScore":
+        result = submitScore(data.payload);
+        break;
+      default:
+        throw new Error("Aksi '" + action + "' tidak valid.");
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", data: result })).setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleLogin(payload) {
+  const { username, password } = payload;
+  const users = sheetToJSON(usersSheet);
+
+  const trimmedUsername = username.trim();
+  const trimmedPassword = password.trim();
+
+  const user = users.find(u => 
+    u.username.trim().toLowerCase() === trimmedUsername.toLowerCase() && 
+    u.password.toString().trim() === trimmedPassword
+  );
+
+  if (user) {
+    const { password, ...safeUser } = user;
+    return safeUser;
+  } else {
+    throw new Error("Username atau password salah");
+  }
+}
+
+function submitScore(payload) {
+  const timestamp = new Date();
+  const { username, nama_lengkap, correct, wrong, total, score } = payload;
+  
+  if (!scoresSheet) {
+    throw new Error("Sheet 'Scores' tidak ditemukan. Harap buat terlebih dahulu.");
+  }
+  
+  scoresSheet.appendRow([timestamp, username, nama_lengkap, correct, wrong, total, score]);
+  return { message: "Nilai berhasil disimpan." };
+}
+
+function addQuestion(payload) {
+  const newId = new Date().getTime().toString();
+  payload.id = newId;
+  const headers = getHeaders(questionsSheet);
+  const newRow = headers.map(header => payload[header] || "");
+  questionsSheet.appendRow(newRow);
+  return payload;
+}
+
+function updateQuestion(payload) {
+  const { id } = payload;
+  const headers = getHeaders(questionsSheet);
+  const idColIndex = headers.indexOf('id') + 1;
+  const data = questionsSheet.getDataRange().getValues();
+  const rowIndex = data.findIndex(row => row[idColIndex - 1].toString() === id.toString());
+
+  if (rowIndex > -1) {
+    const newRow = headers.map(header => payload[header] || "");
+    questionsSheet.getRange(rowIndex + 1, 1, 1, newRow.length).setValues([newRow]);
+    return payload;
+  } else {
+    throw new Error("Soal tidak ditemukan untuk diupdate");
+  }
+}
+
+function addUser(payload) {
+  const users = sheetToJSON(usersSheet);
+  if (users.some(u => u.username.trim().toLowerCase() === payload.username.trim().toLowerCase())) {
+    throw new Error("Username sudah ada");
+  }
+  payload.role = 'siswa';
+  const headers = getHeaders(usersSheet);
+  const newRow = headers.map(header => payload[header] || "");
+  usersSheet.appendRow(newRow);
+  const { password, ...safeUser } = payload;
+  return safeUser;
+}
+
+function deleteRowByValue(sheet, columnName, value) {
+  const headers = getHeaders(sheet);
+  const colIndex = headers.indexOf(columnName);
+  if (colIndex === -1) throw new Error(`Kolom '${columnName}' tidak ditemukan.`);
+
+  const data = sheet.getDataRange().getValues();
+  const rowIndexToDelete = data.findIndex(row => row[colIndex].toString() === value.toString());
+
+  if (rowIndexToDelete > 0) {
+    sheet.deleteRow(rowIndexToDelete + 1);
+    return { message: `Baris dengan ${columnName} = ${value} berhasil dihapus.` };
+  } else {
+    throw new Error(`Data dengan ${columnName} = ${value} tidak ditemukan.`);
+  }
+}
+
+// Helper Functions
+function sheetToJSON(sheet) {
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+  const headers = data.shift();
+  return data.map(row => {
+    let obj = {};
+    headers.forEach((header, i) => {
+      obj[header] = row[i];
+    });
+    return obj;
+  });
+}
+
+function getHeaders(sheet) {
+  if (!sheet || sheet.getLastRow() === 0) return [];
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+}
+
+-->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ===================================================================
+    // KONFIGURASI & STATE APLIKASI
+    // ===================================================================
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzbrCCJt4Ib23cdDnHlbr7_7QBZ0F9lhyyyWoyuavFnkC_RnLFK5Uhdwwr2gqaQC5qmNQ/exec';
+    
+    const state = {
+        currentUser: null,
+        allQuestions: [],
+        allUsers: [],
+        currentQuizQuestions: [],
+        currentQuestionIndex: 0,
+        userAnswers: {},
+        activeView: 'loginView',
+        quizTimerInterval: null,
+        quizEndTime: null,
+    };
+
+    // ===================================================================
+    // ELEMEN DOM
+    // ===================================================================
+    const views = document.querySelectorAll('.view');
+    const loadingSpinner = document.getElementById('loading');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    const appLogo = document.getElementById('appLogo');
+    const userInfo = document.getElementById('userInfo');
+
+    // Login
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+
+    // Kuis
+    const startQuizBtn = document.getElementById('startQuizBtn');
+    const studentName = document.getElementById('studentName');
+    const questionNumber = document.getElementById('questionNumber');
+    const questionTopic = document.getElementById('questionTopic');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const prevQuestionBtn = document.getElementById('prevQuestionBtn');
+    const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+    const finishQuizBtn = document.getElementById('finishQuizBtn');
+    const questionNav = document.getElementById('questionNav');
+    const timerDisplay = document.getElementById('timer');
+    const toggleNavBtn = document.getElementById('toggleNavBtn');
+    const questionNavContainer = document.getElementById('questionNavContainer');
+
+    // Hasil
+    const correctAnswers = document.getElementById('correctAnswers');
+    const wrongAnswers = document.getElementById('wrongAnswers');
+    const finalScore = document.getElementById('finalScore');
+    const retakeQuizBtn = document.getElementById('retakeQuizBtn');
+    const reviewAnswersBtn = document.getElementById('reviewAnswersBtn');
+    const reviewContainer = document.getElementById('reviewContainer');
+
+    // Admin
+    const adminMenuBtns = document.querySelectorAll('.admin-menu-btn');
+    const adminSubViews = document.querySelectorAll('.admin-sub-view');
+    
+    // Admin - Soal
+    const questionsTableBody = document.getElementById('questionsTableBody');
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    const questionModal = document.getElementById('questionModal');
+    const questionForm = document.getElementById('questionForm');
+    const cancelQuestionForm = document.getElementById('cancelQuestionForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const searchQuestionInput = document.getElementById('searchQuestionInput');
+    const topicList = document.getElementById('topic-list');
+
+    // Admin - User
+    const usersTableBody = document.getElementById('usersTableBody');
+    const addUserBtn = document.getElementById('addUserBtn');
+    const userModal = document.getElementById('userModal');
+    const userForm = document.getElementById('userForm');
+    const cancelUserForm = document.getElementById('cancelUserForm');
+
+    // Modal Konfirmasi
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmOkBtn = document.getElementById('confirmOkBtn');
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    let confirmCallback = null;
+
+
+    // ===================================================================
+    // FUNGSI UTAMA & LOGIKA
+    // ===================================================================
+
+    // Fungsi untuk menampilkan view tertentu
+    function navigateTo(viewId) {
+        views.forEach(view => view.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        state.activeView = viewId;
+        window.scrollTo(0, 0);
+    }
+
+    // Fungsi untuk menampilkan loading spinner
+    function showLoading(isLoading) {
+        loadingSpinner.classList.toggle('hidden', !isLoading);
+    }
+
+    // Fungsi untuk menampilkan notifikasi toast
+    function showToast(message, isError = false) {
+        toastMessage.textContent = message;
+        toast.className = `fixed top-5 right-5 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-500 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+        toast.classList.remove('translate-x-[120%]');
+        setTimeout(() => {
+            toast.classList.add('translate-x-[120%]');
+        }, 3000);
+    }
+
+    // Fungsi untuk menampilkan modal konfirmasi
+    function showConfirm(message, callback, cancelCallback = null) {
+        confirmMessage.textContent = message;
+        confirmCallback = callback;
+        confirmModal.classList.remove('hidden');
+        
+        const newCancelBtn = confirmCancelBtn.cloneNode(true);
+        confirmCancelBtn.parentNode.replaceChild(newCancelBtn, confirmCancelBtn);
+        newCancelBtn.addEventListener('click', () => {
+             if (cancelCallback) {
+                cancelCallback();
+            }
+            confirmModal.classList.add('hidden');
+            confirmCallback = null;
+        });
+    }
+
+    confirmOkBtn.addEventListener('click', () => {
+        if (confirmCallback) {
+            confirmCallback();
+        }
+        confirmModal.classList.add('hidden');
+        confirmCallback = null;
+    });
+
+    // Fungsi untuk fetch data dari Google Apps Script
+    async function apiCall(action, payload, method = 'POST') {
+        if (SCRIPT_URL.includes('PASTE_URL')) {
+            showToast('Error: URL Google Apps Script belum diatur!', true);
+            console.error('Harap atur SCRIPT_URL di dalam kode JavaScript.');
+            return;
+        }
+        showLoading(true);
+        try {
+            let response;
+            if (method === 'GET') {
+                response = await fetch(`${SCRIPT_URL}?action=${action}`);
+            } else {
+                response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, payload }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                });
+            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const result = await response.json();
+            if (result.status === 'error') throw new Error(result.message);
+            return result;
+        } catch (error) {
+            console.error('API Call Error:', error);
+            showToast(error.message || 'Terjadi kesalahan jaringan.', true);
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    // Inisialisasi aplikasi
+    async function initializeApp() {
+        const result = await apiCall('getData', null, 'GET');
+        if (result) {
+            state.allUsers = result.users || [];
+            state.allQuestions = result.questions || [];
+            // state.allSettings tidak lagi digunakan
+        }
+    }
+
+    // Logika Login
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        loginError.textContent = '';
+
+        const result = await apiCall('login', { username, password });
+        if (result && result.data) {
+            state.currentUser = result.data;
+            showToast(`Selamat datang, ${state.currentUser.nama_lengkap}!`);
+            setupDashboard();
+        } else {
+            loginError.textContent = 'Username atau password salah.';
+        }
+    });
+
+    function setupDashboard() {
+        if (!state.currentUser) return;
+        
+        userInfo.innerHTML = `
+            <p class="font-semibold">${state.currentUser.nama_lengkap}</p>
+            <button id="logoutBtn" class="text-sm text-red-500 hover:underline">Logout</button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        if (state.currentUser.role === 'admin') {
+            navigateTo('adminDashboardView');
+            renderAdminDashboard();
+        } else {
+            studentName.textContent = state.currentUser.nama_lengkap;
+            checkForSavedQuiz();
+        }
+    }
+
+    function logout() {
+        stopQuizTimer();
+        state.currentUser = null;
+        userInfo.innerHTML = '';
+        loginForm.reset();
+        navigateTo('loginView');
+    }
+
+    // ===================================================================
+    // LOGIKA KUIS DENGAN TIMER & SESI
+    // ===================================================================
+
+    function getSavedQuizKey() {
+        return `quizState_${state.currentUser.username}`;
+    }
+
+    function saveQuizState() {
+        if (!state.currentUser || state.activeView !== 'quizView') return;
+        const quizState = {
+            questions: state.currentQuizQuestions.map(q => q.id),
+            answers: state.userAnswers,
+            endTime: state.quizEndTime
+        };
+        localStorage.setItem(getSavedQuizKey(), JSON.stringify(quizState));
+    }
+
+    function clearSavedQuizState() {
+        if (!state.currentUser) return;
+        localStorage.removeItem(getSavedQuizKey());
+    }
+
+    function checkForSavedQuiz() {
+        const savedStateJSON = localStorage.getItem(getSavedQuizKey());
+        if (savedStateJSON) {
+            showConfirm("Anda memiliki sesi pengerjaan yang belum selesai. Lanjutkan?", 
+                () => { // OK callback
+                    resumeQuiz(JSON.parse(savedStateJSON));
+                }, 
+                () => { // Cancel callback
+                    clearSavedQuizState();
+                    navigateTo('studentDashboardView');
+                }
+            );
+        } else {
+            navigateTo('studentDashboardView');
+        }
+    }
+
+    function resumeQuiz(savedState) {
+        state.currentQuizQuestions = savedState.questions.map(id => state.allQuestions.find(q => q.id == id)).filter(Boolean);
+        
+        if (state.currentQuizQuestions.length !== savedState.questions.length) {
+            showToast("Beberapa soal tidak dapat dimuat. Memulai kuis baru.", true);
+            startQuiz();
+            return;
+        }
+
+        state.userAnswers = savedState.answers;
+        state.quizEndTime = savedState.endTime;
+        state.currentQuestionIndex = 0;
+
+        startQuizTimer();
+        renderQuestion();
+        navigateTo('quizView');
+    }
+
+    // Logika Kuis
+    startQuizBtn.addEventListener('click', startQuiz);
+    retakeQuizBtn.addEventListener('click', startQuiz);
+
+    function startQuiz() {
+        clearSavedQuizState();
+        state.currentQuizQuestions = shuffleArray([...state.allQuestions]).slice(0, 50);
+        state.currentQuestionIndex = 0;
+        state.userAnswers = {};
+        
+        const quizDuration = 60 * 60 * 1000;
+        state.quizEndTime = Date.now() + quizDuration;
+        
+        startQuizTimer();
+        renderQuestion();
+        navigateTo('quizView');
+        saveQuizState();
+    }
+
+    function startQuizTimer() {
+        stopQuizTimer();
+        state.quizTimerInterval = setInterval(updateTimerDisplay, 1000);
+        updateTimerDisplay();
+    }
+
+    function stopQuizTimer() {
+        clearInterval(state.quizTimerInterval);
+        state.quizTimerInterval = null;
+    }
+
+    function updateTimerDisplay() {
+        if (!state.quizEndTime) return;
+        const remainingTime = state.quizEndTime - Date.now();
+        if (remainingTime <= 0) {
+            timerDisplay.textContent = "00:00";
+            stopQuizTimer();
+            showToast("Waktu habis! Jawaban Anda akan dikumpulkan.", true);
+            calculateResults();
+            return;
+        }
+
+        const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
+        const seconds = Math.floor((remainingTime / 1000) % 60);
+        timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    toggleNavBtn.addEventListener('click', () => {
+        const isHidden = questionNavContainer.classList.toggle('hidden');
+        toggleNavBtn.textContent = isHidden ? 'Tampilkan Daftar Soal' : 'Sembunyikan Daftar Soal';
+    });
+
+    function renderQuestionNav() {
+        questionNav.innerHTML = '';
+        state.currentQuizQuestions.forEach((q, index) => {
+            let statusClass = 'bg-gray-200 hover:bg-gray-300 text-gray-800';
+            const isAnswered = state.userAnswers.hasOwnProperty(q.id);
+            const isCurrent = index === state.currentQuestionIndex;
+
+            if (isCurrent) {
+                statusClass = 'bg-blue-600 text-white';
+            } else if (isAnswered) {
+                statusClass = 'bg-green-500 hover:bg-green-600 text-white';
+            }
+            
+            const navButton = document.createElement('button');
+            navButton.textContent = index + 1;
+            navButton.dataset.index = index;
+            navButton.className = `h-8 w-8 flex items-center justify-center rounded font-semibold transition-colors duration-200 ${statusClass}`;
+            questionNav.appendChild(navButton);
+        });
+    }
+    
+    function renderQuestion() {
+        const question = state.currentQuizQuestions[state.currentQuestionIndex];
+        if (!question) return;
+
+        questionNumber.textContent = state.currentQuestionIndex + 1;
+        questionTopic.textContent = question.topik || 'Umum';
+        questionText.textContent = question.pertanyaan;
+
+        optionsContainer.innerHTML = '';
+        const options = ['a', 'b', 'c', 'd', 'e'];
+        options.forEach(opt => {
+            if (question[`opsi_${opt}`]) {
+                const isChecked = state.userAnswers[question.id] === opt;
+                optionsContainer.innerHTML += `
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <input type="radio" name="option" value="${opt}" class="mr-3" ${isChecked ? 'checked' : ''}>
+                        <span><strong>${opt.toUpperCase()}.</strong> ${question[`opsi_${opt}`]}</span>
+                    </label>
+                `;
+            }
+        });
+
+        optionsContainer.querySelectorAll('input[name="option"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.userAnswers[question.id] = e.target.value;
+                saveQuizState();
+                renderQuestionNav();
+            });
+        });
+
+        prevQuestionBtn.disabled = state.currentQuestionIndex === 0;
+        prevQuestionBtn.classList.toggle('opacity-50', prevQuestionBtn.disabled);
+        
+        const isLastQuestion = state.currentQuestionIndex === state.currentQuizQuestions.length - 1;
+        nextQuestionBtn.classList.toggle('hidden', isLastQuestion);
+        finishQuizBtn.classList.toggle('hidden', !isLastQuestion);
+        
+        renderQuestionNav();
+    }
+
+    questionNav.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON' && e.target.dataset.index) {
+            const newIndex = parseInt(e.target.dataset.index, 10);
+            if (newIndex !== state.currentQuestionIndex) {
+                state.currentQuestionIndex = newIndex;
+                renderQuestion();
+            }
+        }
+    });
+    
+    nextQuestionBtn.addEventListener('click', () => {
+        if (state.currentQuestionIndex < state.currentQuizQuestions.length - 1) {
+            state.currentQuestionIndex++;
+            renderQuestion();
+        }
+    });
+
+    prevQuestionBtn.addEventListener('click', () => {
+        if (state.currentQuestionIndex > 0) {
+            state.currentQuestionIndex--;
+            renderQuestion();
+        }
+    });
+
+    finishQuizBtn.addEventListener('click', () => {
+        showConfirm('Apakah Anda yakin ingin menyelesaikan pengerjaan soal?', () => {
+            calculateResults();
+        });
+    });
+
+    async function calculateResults() {
+        stopQuizTimer();
+        let correct = 0;
+        state.currentQuizQuestions.forEach(q => {
+            if (state.userAnswers[q.id] === q.jawaban_benar) {
+                correct++;
+            }
+        });
+        
+        const totalQuestions = state.currentQuizQuestions.length;
+        const score = totalQuestions > 0 ? ((correct / totalQuestions) * 100).toFixed(0) : 0;
+
+        correctAnswers.textContent = correct;
+        wrongAnswers.textContent = totalQuestions - correct;
+        finalScore.textContent = score;
+
+        const scorePayload = {
+            username: state.currentUser.username,
+            nama_lengkap: state.currentUser.nama_lengkap,
+            correct: correct,
+            wrong: totalQuestions - correct,
+            total: totalQuestions,
+            score: parseInt(score)
+        };
+        await apiCall('submitScore', scorePayload);
+        
+        clearSavedQuizState();
+
+        reviewContainer.innerHTML = '';
+        reviewContainer.classList.add('hidden');
+        navigateTo('resultView');
+    }
+
+    reviewAnswersBtn.addEventListener('click', () => {
+        if (reviewContainer.classList.contains('hidden')) {
+            renderReview();
+            reviewContainer.classList.remove('hidden');
+            reviewAnswersBtn.textContent = 'Sembunyikan Pembahasan';
+        } else {
+            reviewContainer.classList.add('hidden');
+            reviewAnswersBtn.textContent = 'Lihat Pembahasan';
+        }
+    });
+
+    function renderReview() {
+        reviewContainer.innerHTML = '';
+        state.currentQuizQuestions.forEach((q, index) => {
+            const userAnswer = state.userAnswers[q.id];
+            const isCorrect = userAnswer === q.jawaban_benar;
+            const cardBg = isCorrect ? 'bg-green-50' : 'bg-red-50';
+            const borderColor = isCorrect ? 'border-green-300' : 'border-red-300';
+
+            let reviewHTML = `<div class="p-4 border ${borderColor} rounded-lg ${cardBg}">
+                <p class="font-semibold">${index + 1}. ${q.pertanyaan}</p>
+                <div class="mt-2 space-y-1 text-sm">`;
+            
+            ['a', 'b', 'c', 'd', 'e'].forEach(opt => {
+                if (q[`opsi_${opt}`]) {
+                    let optionClass = '';
+                    if (opt === q.jawaban_benar) {
+                        optionClass = 'text-green-700 font-bold';
+                    }
+                    if (opt === userAnswer && !isCorrect) {
+                        optionClass = 'text-red-700 line-through';
+                    }
+                    reviewHTML += `<p class="${optionClass}">${opt.toUpperCase()}. ${q[`opsi_${opt}`]}</p>`;
+                }
+            });
+
+            reviewHTML += `</div>
+                <p class="mt-2 text-xs">Jawaban Anda: <span class="font-bold">${userAnswer ? userAnswer.toUpperCase() : 'Tidak dijawab'}</span> | Kunci: <span class="font-bold">${q.jawaban_benar.toUpperCase()}</span></p>
+            </div>`;
+            reviewContainer.innerHTML += reviewHTML;
+        });
+    }
+
+    // Logika Admin
+    function renderAdminDashboard() {
+        renderQuestionsTable();
+        renderUsersTable();
+    }
+
+    adminMenuBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.dataset.target;
+            adminSubViews.forEach(subView => subView.classList.add('hidden'));
+            document.getElementById(targetId).classList.remove('hidden');
+        });
+    });
+
+    // Admin - Kelola Soal
+    function renderQuestionsTable(filter = '') {
+        questionsTableBody.innerHTML = '';
+        const filteredQuestions = state.allQuestions.filter(q => 
+            (q.pertanyaan && q.pertanyaan.toLowerCase().includes(filter.toLowerCase())) || 
+            (q.topik && q.topik.toLowerCase().includes(filter.toLowerCase()))
+        );
+
+        if (filteredQuestions.length === 0) {
+            questionsTableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Tidak ada soal ditemukan.</td></tr>';
+            return;
+        }
+
+        filteredQuestions.forEach(q => {
+            const row = document.createElement('tr');
+            row.className = 'border-b';
+            row.innerHTML = `
+                <td class="py-2 px-4">
+                    <p class="font-semibold truncate" style="max-width: 400px;">${q.pertanyaan}</p>
+                </td>
+                <td class="py-2 px-4">${q.topik}</td>
+                <td class="py-2 px-4 text-center">
+                    <button class="edit-question-btn bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" data-id="${q.id}">Edit</button>
+                    <button class="delete-question-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 ml-2" data-id="${q.id}">Hapus</button>
+                </td>
+            `;
+            questionsTableBody.appendChild(row);
+        });
+    }
+    
+    searchQuestionInput.addEventListener('input', (e) => {
+        renderQuestionsTable(e.target.value);
+    });
+
+    addQuestionBtn.addEventListener('click', () => {
+        questionForm.reset();
+        document.getElementById('questionId').value = '';
+        modalTitle.textContent = 'Tambah Soal Baru';
+        updateTopicDatalist();
+        questionModal.classList.remove('hidden');
+    });
+
+    cancelQuestionForm.addEventListener('click', () => {
+        questionModal.classList.add('hidden');
+    });
+
+    questionForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('questionId').value;
+        const payload = {
+            id: id,
+            pertanyaan: document.getElementById('pertanyaan').value,
+            opsi_a: document.getElementById('opsi_a').value,
+            opsi_b: document.getElementById('opsi_b').value,
+            opsi_c: document.getElementById('opsi_c').value,
+            opsi_d: document.getElementById('opsi_d').value,
+            opsi_e: document.getElementById('opsi_e').value,
+            jawaban_benar: document.getElementById('jawaban_benar').value,
+            topik: document.getElementById('topik').value,
+        };
+
+        const action = id ? 'updateQuestion' : 'addQuestion';
+        const result = await apiCall(action, payload);
+
+        if (result && result.data) {
+            showToast(`Soal berhasil ${id ? 'diperbarui' : 'ditambahkan'}!`);
+            questionModal.classList.add('hidden');
+            if (id) {
+                const index = state.allQuestions.findIndex(q => q.id == id);
+                state.allQuestions[index] = result.data;
+            } else {
+                state.allQuestions.push(result.data);
+            }
+            renderQuestionsTable();
+        }
+    });
+
+    questionsTableBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('edit-question-btn')) {
+            const id = e.target.dataset.id;
+            const question = state.allQuestions.find(q => q.id == id);
+            if (question) {
+                document.getElementById('questionId').value = question.id;
+                document.getElementById('pertanyaan').value = question.pertanyaan;
+                document.getElementById('opsi_a').value = question.opsi_a;
+                document.getElementById('opsi_b').value = question.opsi_b;
+                document.getElementById('opsi_c').value = question.opsi_c;
+                document.getElementById('opsi_d').value = question.opsi_d;
+                document.getElementById('opsi_e').value = question.opsi_e;
+                document.getElementById('jawaban_benar').value = question.jawaban_benar;
+                document.getElementById('topik').value = question.topik;
+                modalTitle.textContent = 'Edit Soal';
+                updateTopicDatalist();
+                questionModal.classList.remove('hidden');
+            }
+        }
+        if (e.target.classList.contains('delete-question-btn')) {
+            const id = e.target.dataset.id;
+            showConfirm('Apakah Anda yakin ingin menghapus soal ini?', () => {
+                deleteQuestion(id);
+            });
+        }
+    });
+
+    async function deleteQuestion(id) {
+        const result = await apiCall('deleteQuestion', { id });
+        if (result) {
+            showToast('Soal berhasil dihapus!');
+            state.allQuestions = state.allQuestions.filter(q => q.id != id);
+            renderQuestionsTable();
+        }
+    }
+    
+    function updateTopicDatalist() {
+        const uniqueTopics = [...new Set(state.allQuestions.map(q => q.topik))];
+        topicList.innerHTML = uniqueTopics.map(topic => `<option value="${topic}">`).join('');
+    }
+
+    // Admin - Kelola Pengguna
+    function renderUsersTable() {
+        usersTableBody.innerHTML = '';
+        state.allUsers.forEach(user => {
+            const row = document.createElement('tr');
+            row.className = 'border-b';
+            row.innerHTML = `
+                <td class="py-2 px-4">${user.nama_lengkap}</td>
+                <td class="py-2 px-4">${user.username}</td>
+                <td class="py-2 px-4">${user.role}</td>
+                <td class="py-2 px-4 text-center">
+                    ${user.role !== 'admin' ? `<button class="delete-user-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600" data-username="${user.username}">Hapus</button>` : ''}
+                </td>
+            `;
+            usersTableBody.appendChild(row);
+        });
+    }
+    
+    addUserBtn.addEventListener('click', () => {
+        userForm.reset();
+        userModal.classList.remove('hidden');
+    });
+
+    cancelUserForm.addEventListener('click', () => {
+        userModal.classList.add('hidden');
+    });
+
+    userForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            nama_lengkap: document.getElementById('nama_lengkap_user').value,
+            username: document.getElementById('username_user').value,
+            password: document.getElementById('password_user').value,
+        };
+
+        const result = await apiCall('addUser', payload);
+        if (result && result.data) {
+            showToast('Siswa baru berhasil ditambahkan!');
+            userModal.classList.add('hidden');
+            state.allUsers.push(result.data);
+            renderUsersTable();
+        }
+    });
+
+    usersTableBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-user-btn')) {
+            const username = e.target.dataset.username;
+            showConfirm(`Apakah Anda yakin ingin menghapus pengguna '${username}'?`, () => {
+                deleteUser(username);
+            });
+        }
+    });
+
+    async function deleteUser(username) {
+        const result = await apiCall('deleteUser', { username });
+        if (result) {
+            showToast('Pengguna berhasil dihapus!');
+            state.allUsers = state.allUsers.filter(u => u.username !== username);
+            renderUsersTable();
+        }
+    }
+
+    // Helper: Shuffle array
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+    
+    // Mulai aplikasi
+    initializeApp();
+});
+</script>
+</body>
+</html>
